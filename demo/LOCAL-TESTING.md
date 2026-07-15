@@ -55,8 +55,8 @@ Same repo, same everything — only the context changes.
 ## Cleanup
 
 ```bash
-# remove the demo from the local cluster (or just Reset Kubernetes in Docker Desktop)
-kubectl delete -f bootstrap/root-app.yaml
-helm uninstall argocd -n argocd
-kubectl delete ns argocd checkout payment istio-system monitoring
+./bootstrap/cleanup.sh                    # guarded: confirms context, refuses prod/sbox
+DELETE_CRDS=true ./bootstrap/cleanup.sh   # also removes istio + gateway-api CRDs
 ```
+
+(Locally you can also just Reset Kubernetes in Docker Desktop.)
