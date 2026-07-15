@@ -56,4 +56,7 @@ spec:
           jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"]
         - group: admissionregistration.k8s.io
           kind: ValidatingWebhookConfiguration
-          jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"]
+          jqPathExpressions:
+            # istiod patches both fields at runtime once it is ready
+            - ".webhooks[]?.clientConfig.caBundle"
+            - ".webhooks[]?.failurePolicy"
