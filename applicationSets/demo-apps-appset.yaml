@@ -1,6 +1,6 @@
 # Installs the demo applications (checkout, payment) from the local demo-app helm chart.
 # Each app: apps/<name>/config.yaml (generator input) + apps/<name>/values.yaml (helm values).
-# Auto-sync is ON — the live "flip istio.enabled and git push" moment syncs by itself.
+# Auto-sync is OFF for these apps — the presenter syncs manually in the UI during the demo.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -43,8 +43,7 @@ spec:
           targetRevision: main
           ref: values
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        # NO automated sync on purpose: during the live demo we click "Sync"
+        # in the ArgoCD UI ourselves — better control and better theater.
         syncOptions:
           - CreateNamespace=true

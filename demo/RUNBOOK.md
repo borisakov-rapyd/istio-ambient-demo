@@ -51,7 +51,18 @@ kubectl -n istio-system port-forward svc/kiali 20001:20001 &
 
 ## Phase 3 — LIVE: prove traffic is plaintext (~3 min)
 
-**3a. Call the API from inside checkout:**
+**3a. Show Kiali "before" — we are blind:**
+
+```bash
+kubectl -n istio-system port-forward svc/kiali 20001:20001 &
+# http://localhost:20001 → Traffic Graph → select checkout + payment → auto-refresh 15s
+```
+
+Traffic is flowing (traffic-gen hits payment every 2s), yet the graph is EMPTY and the
+workloads show an "Out of mesh" badge. No mesh = no telemetry. Keep this tab open —
+the edge will appear live after the label flip.
+
+**3b. Call the API from inside checkout:**
 
 ```bash
 kubectl -n checkout exec deploy/checkout -- \
@@ -59,7 +70,7 @@ kubectl -n checkout exec deploy/checkout -- \
 # JSON echo of the request — service-to-service call works, plain Kubernetes
 ```
 
-**3b. Sniff it on the node — the money shot:**
+**3c. Sniff it on the node — the money shot:**
 
 ```bash
 NODE=$(kubectl -n payment get pod -l app=payment -o jsonpath='{.items[0].spec.nodeName}')
@@ -79,7 +90,8 @@ Audience sees **readable HTTP** — headers, JSON, everything — on the wire. I
 git commit -am "enroll checkout & payment into ambient mesh" && git push
 ```
 
-Switch to the ArgoCD UI: auto-sync picks it up (or click Refresh → Sync for drama).
+Switch to the ArgoCD UI: the apps turn **OutOfSync** (auto-sync is intentionally off
+for checkout/payment) → narrate the diff → click **Sync** on each app yourself.
 Point out: **no pod restarts** — same pods, same IPs, `kubectl -n payment get pods` shows zero restarts.
 
 ## Phase 5 — LIVE: prove it's mTLS now (~3 min)
