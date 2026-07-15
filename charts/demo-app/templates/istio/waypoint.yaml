@@ -1,0 +1,18 @@
+{{- if and .Values.istio.enabled .Values.istio.waypoint.enabled }}
+# The waypoint: a per-namespace L7 proxy (Envoy), deployed like any other
+# resource — it's just a Gateway. This is what adds HTTP telemetry
+# (istio_requests_total & friends), retries, canary weights and L7 authz
+# on top of ztunnel's L4 mTLS.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: waypoint
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE
+{{- end }}

@@ -115,6 +115,23 @@ The tcpdump terminal: port-8080 plaintext is gone; traffic now rides **:15008 (H
 
 Kiali (http://localhost:20001): Traffic Graph → namespaces `checkout`,`payment` → enable the **Security** display badge → padlocks on the edges.
 
+## Phase 5.5 — L7 upgrade: attach a waypoint (~2 min)
+
+Point at Kiali: TCP bytes + padlock, but the HTTP panels are empty. That's the L4/L7
+split in action — ztunnel doesn't parse HTTP. Now attach the L7 proxy, via Git of course:
+
+```bash
+# apps/payment/values.yaml  -> istio.waypoint.enabled: true
+# apps/checkout/values.yaml -> istio.waypoint.enabled: true   (optional but nicer graph)
+git commit -am "attach waypoints: give me HTTP golden signals" && git push
+# Sync in ArgoCD → a 'waypoint' deployment appears in each namespace
+kubectl get gateway -n payment && kubectl get pods -n payment
+```
+
+1–2 minutes later Kiali shows istio_requests_total: request rates, response codes,
+latencies — the full HTTP graph. One value flip = observability upgrade.
+(Requires the gateway-api-crds app — synced automatically at wave -1.)
+
 ## Phase 6 — Bonus if time allows (~2 min)
 
 **STRICT mTLS — reject plaintext callers:**

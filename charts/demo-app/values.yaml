@@ -34,6 +34,13 @@ istio:
   #               enrollment rides the next rollout.
   mode: namespace
 
+  # Waypoint = per-namespace L7 proxy. ztunnel alone gives L4 only (mTLS,
+  # identity, TCP bytes). Enable this to get HTTP metrics in Kiali
+  # (istio_requests_total), retries, canary weights, L7 authz.
+  # Requires the Gateway API CRDs (installed by gateway-api-crds app).
+  waypoint:
+    enabled: false
+
   # Namespace-wide STRICT mTLS (PeerAuthentication). Enable AFTER the service
   # is in the mesh to prove that plaintext callers get rejected.
   strictMtls: false

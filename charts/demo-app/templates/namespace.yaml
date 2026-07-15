@@ -16,3 +16,7 @@ metadata:
     # >>> the whole ambient onboarding — live pods join the mesh, no restart <<<
     istio.io/dataplane-mode: ambient
     {{- end }}
+    {{- if and .Values.istio.enabled .Values.istio.waypoint.enabled }}
+    # route this namespace's service traffic through the waypoint (L7)
+    istio.io/use-waypoint: waypoint
+    {{- end }}

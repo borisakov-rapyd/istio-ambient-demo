@@ -3,6 +3,10 @@ name: payment
 istio:
   enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
 
+  # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
+  waypoint:
+    enabled: false
+
   # Bonus steps (enable AFTER both apps are in the mesh):
   strictMtls: false           # step 2: reject plaintext callers
   authorizationPolicy:
