@@ -1,0 +1,10 @@
+apiVersion: v2
+name: demo-app
+description: >-
+  Minimal demo service for the Istio ambient mode live demo: Deployment,
+  Service, and Istio templates. Setting istio.enabled=true enrolls the
+  workload into the ambient mesh via the istio.io/dataplane-mode label —
+  no restart of anything else, no sidecar injection.
+type: application
+version: 0.1.0
+appVersion: "1.0"

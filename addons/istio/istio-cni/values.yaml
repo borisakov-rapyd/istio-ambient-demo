@@ -1,0 +1,14 @@
+# istio-cni in ambient mode, chained with the AWS VPC CNI (does NOT replace it).
+profile: ambient
+
+ambient:
+  enabled: true
+  reconcileIptablesOnStartup: true
+  ipv6: false          # rollout tip #1: keep off unless you're deliberately dual-stack
+  dnsCapture: true
+
+cni:
+  # EKS: the VPC CNI owns 10-aws.conflist; istio-cni injects itself as a chained plugin.
+  excludeNamespaces:
+    - istio-system
+    - kube-system

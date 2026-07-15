@@ -1,0 +1,2 @@
+# istio-base: CRDs + cluster-wide resources. Defaults are fine for the demo.
+defaultRevision: default

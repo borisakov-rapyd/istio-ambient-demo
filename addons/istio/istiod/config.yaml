@@ -1,0 +1,6 @@
+appName: istiod
+chartName: istiod
+version: 1.29.2
+repository: https://istio-release.storage.googleapis.com/charts
+namespace: istio-system
+syncWave: "1"

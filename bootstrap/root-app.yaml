@@ -1,0 +1,24 @@
+# App-of-apps: syncs everything under applicationSets/ from this repo.
+# This is the only object applied by hand — everything else is GitOps from here.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+    targetRevision: main
+    path: applicationSets
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

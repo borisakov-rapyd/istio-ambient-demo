@@ -1,0 +1,6 @@
+appName: prometheus
+chartName: prometheus
+version: 25.30.1
+repository: https://prometheus-community.github.io/helm-charts
+namespace: monitoring
+syncWave: "3"

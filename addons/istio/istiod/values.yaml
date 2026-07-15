@@ -1,0 +1,25 @@
+# istiod with ambient enabled — mirrors devops-eks-addons-argocd global-values.
+profile: ambient
+
+meshConfig:
+  enablePrometheusMerge: true
+  outboundTrafficPolicy:
+    mode: ALLOW_ANY
+  defaultHttpRetryPolicy:
+    attempts: 2
+    retryOn: "connect-failure,refused-stream,unavailable,cancelled,reset"
+
+pilot:
+  env:
+    PILOT_ENABLE_AMBIENT: "true"
+    PILOT_AUTO_ALLOW_WAYPOINT_POLICY: "true"
+  # Node untaint controller — not required for the demo (no autoscaling),
+  # but shown here because we present it as a production rollout tip:
+  # taint:
+  #   enabled: true
+  #   namespace: istio-system
+  # env:
+  #   PILOT_ENABLE_NODE_UNTAINT_CONTROLLERS: "true"
+
+global:
+  logAsJson: false

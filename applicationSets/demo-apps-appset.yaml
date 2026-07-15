@@ -1,0 +1,50 @@
+# Installs the demo applications (checkout, payment) from the local demo-app helm chart.
+# Each app: apps/<name>/config.yaml (generator input) + apps/<name>/values.yaml (helm values).
+# Auto-sync is ON — the live "flip istio.enabled and git push" moment syncs by itself.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-apps
+  namespace: argocd
+spec:
+  syncPolicy:
+    applicationsSync: create-update
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+        revision: main
+        files:
+          - path: apps/*/config.yaml
+  template:
+    metadata:
+      name: "{{ .appName }}"
+      labels:
+        type: demo-app
+      annotations:
+        argocd.argoproj.io/sync-wave: "10"
+    spec:
+      project: default
+      revisionHistoryLimit: 2
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      sources:
+        - repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+          targetRevision: main
+          path: charts/demo-app
+          helm:
+            releaseName: "{{ .appName }}"
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - "$values/apps/{{ .appName }}/values.yaml"
+        - repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+          targetRevision: main
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

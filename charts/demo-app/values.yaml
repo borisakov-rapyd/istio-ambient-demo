@@ -1,0 +1,45 @@
+# ---- demo-app defaults --------------------------------------------------
+name: demo-app
+
+replicaCount: 1
+
+image:
+  # Echo server: answers any HTTP call with a JSON dump of the request.
+  repository: mendhak/http-https-echo
+  tag: "37"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80          # the app "runs on port 80" from the caller's perspective
+  targetPort: 8080  # container listens on 8080 (non-root friendly)
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+# ---- Istio / ambient mesh ------------------------------------------------
+istio:
+  # THE demo switch. true => pod gets label istio.io/dataplane-mode: ambient
+  # and joins the mesh live (no restart, no injection).
+  enabled: false
+
+  # Namespace-wide STRICT mTLS (PeerAuthentication). Enable AFTER the service
+  # is in the mesh to prove that plaintext callers get rejected.
+  strictMtls: false
+
+  # L4 authorization: only the listed service accounts may call this app.
+  authorizationPolicy:
+    enabled: false
+    allowedPrincipals: []
+    # e.g. ["cluster.local/ns/checkout/sa/checkout"]
+
+# ---- Traffic generator ----------------------------------------------------
+# Optional in-cluster client that curls a target in a loop, so Kiali has a
+# live graph to draw (and tcpdump has something to show).
+trafficGenerator:
+  enabled: false
+  targetUrl: ""       # e.g. http://payment.payment.svc.cluster.local/api/charge
+  intervalSeconds: 2

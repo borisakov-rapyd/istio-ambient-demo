@@ -1,0 +1,59 @@
+# Installs all cluster addons (istio components, prometheus, kiali) from helm charts.
+# Same pattern as devops-eks-addons-argocd: git file generator over config.yaml,
+# values from a values.yaml sitting next to each config (via $values ref).
+# Simplified for the demo: single in-cluster destination, no cluster-filter plugin.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-addons
+  namespace: argocd
+spec:
+  syncPolicy:
+    applicationsSync: create-update
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+        revision: main
+        files:
+          - path: addons/**/config.yaml
+  template:
+    metadata:
+      name: "{{ .appName }}"
+      labels:
+        type: addon
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+    spec:
+      project: default
+      revisionHistoryLimit: 2
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      sources:
+        - repoURL: "{{ .repository }}"
+          targetRevision: "{{ .version }}"
+          chart: "{{ .chartName }}"
+          helm:
+            releaseName: "{{ .appName }}"
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - "$values/{{ .path.path }}/values.yaml"
+        - repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+          targetRevision: main
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+      ignoreDifferences:
+        - group: admissionregistration.k8s.io
+          kind: MutatingWebhookConfiguration
+          jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"]
+        - group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"]

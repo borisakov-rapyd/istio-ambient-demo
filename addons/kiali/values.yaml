@@ -1,0 +1,14 @@
+# Kiali — anonymous auth for the live demo (never in prod).
+auth:
+  strategy: anonymous
+
+external_services:
+  prometheus:
+    url: http://prometheus-server.monitoring.svc.cluster.local
+  grafana:
+    enabled: false
+  tracing:
+    enabled: false
+
+deployment:
+  view_only_mode: true

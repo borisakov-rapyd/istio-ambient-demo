@@ -1,0 +1,18 @@
+# Minimal Prometheus — exists only so Kiali can draw the traffic graph.
+# Default scrape configs already pick up pods annotated by Istio
+# (enablePrometheusMerge=true exposes merged metrics on the pod annotations).
+alertmanager:
+  enabled: false
+prometheus-pushgateway:
+  enabled: false
+kube-state-metrics:
+  enabled: true
+prometheus-node-exporter:
+  enabled: false
+
+server:
+  retention: 2h          # demo cluster, keep it light
+  persistentVolume:
+    enabled: false
+  global:
+    scrape_interval: 15s   # fast graph refresh for the live demo

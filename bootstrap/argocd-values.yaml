@@ -1,0 +1,22 @@
+# ArgoCD values for the live demo — minimal, demo-friendly
+configs:
+  params:
+    # plain HTTP behind kubectl port-forward — fine for a demo, never for prod
+    server.insecure: true
+  cm:
+    timeout.reconciliation: 30s   # fast refresh so the audience doesn't wait
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false
+
+server:
+  replicas: 1
+
+repoServer:
+  replicas: 1
+
+controller:
+  replicas: 1

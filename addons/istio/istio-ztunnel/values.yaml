@@ -1,0 +1,7 @@
+# ztunnel: the per-node L4 proxy (DaemonSet).
+terminationGracePeriodSeconds: 300   # rollout tip: don't cut long-lived TCP mid-upgrade
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi

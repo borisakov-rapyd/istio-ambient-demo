@@ -1,0 +1,41 @@
+{{- if .Values.trafficGenerator.enabled }}
+# Loops requests at the target so Kiali has live traffic to draw.
+# Inherits the same istio.enabled toggle as the main app.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demo-app.name" . }}-traffic-gen
+  labels:
+    app: {{ include "demo-app.name" . }}-traffic-gen
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "demo-app.name" . }}-traffic-gen
+  template:
+    metadata:
+      labels:
+        app: {{ include "demo-app.name" . }}-traffic-gen
+        version: v1
+        {{- if .Values.istio.enabled }}
+        istio.io/dataplane-mode: ambient
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "demo-app.name" . }}
+      containers:
+        - name: traffic-gen
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                curl -s -o /dev/null -w "%{http_code} {{ .Values.trafficGenerator.targetUrl }}\n" \
+                  "{{ .Values.trafficGenerator.targetUrl }}" || true
+                sleep {{ .Values.trafficGenerator.intervalSeconds }}
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+{{- end }}

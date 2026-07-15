@@ -1,0 +1,18 @@
+{{- if and .Values.istio.enabled .Values.istio.authorizationPolicy.enabled }}
+# L4 authorization enforced by ztunnel: only the listed identities may call us.
+# Identity = SPIFFE service account, NOT an IP address.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "demo-app.name" . }}-allow
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "demo-app.name" . }}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              {{- toYaml .Values.istio.authorizationPolicy.allowedPrincipals | nindent 14 }}
+{{- end }}

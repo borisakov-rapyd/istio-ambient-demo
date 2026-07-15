@@ -1,0 +1,11 @@
+{{- if and .Values.istio.enabled .Values.istio.strictMtls }}
+# STRICT mTLS for this namespace: plaintext (non-mesh) callers are rejected.
+# Great live-demo moment: curl from a non-mesh pod fails with connection reset.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "demo-app.name" . }}-strict
+spec:
+  mtls:
+    mode: STRICT
+{{- end }}

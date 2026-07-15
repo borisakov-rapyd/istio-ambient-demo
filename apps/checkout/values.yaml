@@ -1,0 +1,11 @@
+name: checkout
+
+istio:
+  enabled: false   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
+
+# checkout continuously calls payment — this paints the Kiali graph
+# and gives tcpdump something to capture.
+trafficGenerator:
+  enabled: true
+  targetUrl: http://payment.payment.svc.cluster.local/api/charge
+  intervalSeconds: 2
