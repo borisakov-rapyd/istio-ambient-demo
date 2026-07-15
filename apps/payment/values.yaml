@@ -13,3 +13,9 @@ istio:
     enabled: false            # step 3: only checkout may call payment
     allowedPrincipals:
       - cluster.local/ns/checkout/sa/checkout
+
+# payment also calls checkout — bidirectional traffic for a livelier graph
+trafficGenerator:
+  enabled: true
+  targetUrl: http://checkout.checkout.svc.cluster.local/api/refund
+  intervalSeconds: 2
