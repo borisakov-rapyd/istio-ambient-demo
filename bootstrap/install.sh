@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-ARGOCD_CHART_VERSION="${ARGOCD_CHART_VERSION:-7.7.11}"   # bump to latest before demo day
+ARGOCD_CHART_VERSION="${ARGOCD_CHART_VERSION:-10.1.3}"   # ArgoCD 3.x — needed for k8s >=1.33 (terminatingReplicas diff fix)
 
 if grep -q REPO_URL_PLACEHOLDER root-app.yaml; then
   echo "ERROR: repo URL not set. Run ./set-repo-url.sh <git-repo-url> first." >&2
