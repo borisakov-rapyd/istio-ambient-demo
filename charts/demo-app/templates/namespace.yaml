@@ -1,0 +1,18 @@
+# The chart manages the app namespace so that istio.enabled can toggle the
+# ambient dataplane label ON THE NAMESPACE. This is what makes enrollment
+# restart-free: istio-cni enrolls all RUNNING pods in place. A pod-template
+# label would create a new ReplicaSet and roll the pods (that's just how
+# Deployments work) — exactly what we want to avoid showing on stage.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  annotations:
+    # never prune the namespace, even if the app is deleted
+    argocd.argoproj.io/sync-options: Prune=false
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    {{- if and .Values.istio.enabled (eq .Values.istio.mode "namespace") }}
+    # >>> the whole ambient onboarding — live pods join the mesh, no restart <<<
+    istio.io/dataplane-mode: ambient
+    {{- end }}

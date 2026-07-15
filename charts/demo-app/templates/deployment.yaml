@@ -13,8 +13,9 @@ spec:
     metadata:
       labels:
         {{- include "demo-app.labels" . | nindent 8 }}
-        {{- if .Values.istio.enabled }}
-        # >>> This single label is the whole ambient onboarding <<<
+        {{- if and .Values.istio.enabled (eq .Values.istio.mode "pod") }}
+        # per-workload enrollment (production pattern) — note: changing the
+        # pod template triggers a rolling restart; enrollment rides the rollout
         istio.io/dataplane-mode: ambient
         {{- end }}
     spec:

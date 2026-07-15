@@ -90,6 +90,12 @@ Audience sees **readable HTTP** — headers, JSON, everything — on the wire. I
 git commit -am "enroll checkout & payment into ambient mesh" && git push
 ```
 
+Two enrollment modes exist in the chart (`istio.mode`) — worth 30s of narration:
+
+- `namespace` (demo default): label on the Namespace → running pods join **live, no restart**.
+- `pod`: label on the pod template → per-workload granularity (our production pattern),
+  but enrollment rides a rolling restart — a pod-template change always creates a new ReplicaSet.
+
 Switch to the ArgoCD UI: the apps turn **OutOfSync** (auto-sync is intentionally off
 for checkout/payment) → narrate the diff → click **Sync** on each app yourself.
 Point out: **no pod restarts** — same pods, same IPs, `kubectl -n payment get pods` shows zero restarts.
@@ -142,6 +148,6 @@ git revert HEAD~..HEAD   # or set istio.enabled back to false, push
 | Symptom | Check |
 |---|---|
 | Apps not syncing | repo URL/credentials in ArgoCD; `kubectl -n argocd get applicationsets` |
-| ztunnel-config empty after label | istio-cni-node logs; pod actually has the label (`kubectl get pod -L istio.io/dataplane-mode`) |
+| ztunnel-config empty after label | istio-cni-node logs; namespace actually has the label (`kubectl get ns -L istio.io/dataplane-mode`) |
 | Kiali graph empty | prometheus-server up; wait 2× scrape interval; traffic generator running |
 | No internet / cluster dead on stage | screen-recording of the full flow (record during rehearsal!) |

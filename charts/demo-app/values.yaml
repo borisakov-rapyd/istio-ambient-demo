@@ -22,9 +22,17 @@ resources:
 
 # ---- Istio / ambient mesh ------------------------------------------------
 istio:
-  # THE demo switch. true => pod gets label istio.io/dataplane-mode: ambient
-  # and joins the mesh live (no restart, no injection).
+  # THE demo switch.
   enabled: false
+
+  # How the workload is enrolled into the ambient mesh:
+  #   namespace — label istio.io/dataplane-mode: ambient on the NAMESPACE.
+  #               All running pods join live: no restart, no injection. (demo default)
+  #   pod       — same label on the Deployment pod template. Per-workload
+  #               granularity (what our production helm chart does), but a
+  #               pod-template change = new ReplicaSet = rolling restart;
+  #               enrollment rides the next rollout.
+  mode: namespace
 
   # Namespace-wide STRICT mTLS (PeerAuthentication). Enable AFTER the service
   # is in the mesh to prove that plaintext callers get rejected.

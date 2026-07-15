@@ -18,7 +18,7 @@ spec:
       labels:
         app: {{ include "demo-app.name" . }}-traffic-gen
         version: v1
-        {{- if .Values.istio.enabled }}
+        {{- if and .Values.istio.enabled (eq .Values.istio.mode "pod") }}
         istio.io/dataplane-mode: ambient
         {{- end }}
     spec:
