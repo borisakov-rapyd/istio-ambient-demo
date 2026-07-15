@@ -1,7 +1,7 @@
 name: payment
 
 istio:
-  enabled: false   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
+  enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
 
   # Bonus steps (enable AFTER both apps are in the mesh):
   strictMtls: false           # step 2: reject plaintext callers
