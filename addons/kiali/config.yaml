@@ -1,6 +1,6 @@
 appName: kiali
 chartName: kiali-server
-version: 2.4.0
+version: 2.29.0   # keep roughly in step with the Istio minor (2.4.x was too old to parse 1.29's ztunnel)
 repository: https://kiali.org/helm-charts
 namespace: istio-system
 syncWave: "4"

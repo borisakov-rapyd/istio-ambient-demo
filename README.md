@@ -35,7 +35,7 @@ istio-base (0) → istiod, istio-cni (1) → ztunnel (2) → prometheus (3) → 
 
 ## Before demo day — checklist
 
-- [ ] Bump pinned chart versions if desired (argo-cd 10.1.3, kiali 2.4.0, prometheus 25.30.1 — verify they still resolve: `helm search repo`). Keep ArgoCD ≥ chart 8.x on k8s 1.33+ (older versions fail diffing with `.status.terminatingReplicas: field not declared in schema`).
+- [ ] Bump pinned chart versions if desired (argo-cd 10.1.3, kiali 2.29.0, prometheus 25.30.1 — verify they still resolve: `helm search repo`). Keep ArgoCD ≥ chart 8.x on k8s 1.33+ (older versions fail diffing with `.status.terminatingReplicas`), and keep Kiali roughly in step with the Istio minor (old Kiali can't parse new ztunnel config dumps).
 - [ ] Public Git repo (or add repo credentials to ArgoCD)
 - [ ] EKS: 2–3 regular nodes (demo workloads must NOT land on Fargate — no ambient support)
 - [ ] `istioctl` 1.29.x on the presentation laptop
