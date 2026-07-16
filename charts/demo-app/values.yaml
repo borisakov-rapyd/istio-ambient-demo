@@ -41,6 +41,17 @@ istio:
   waypoint:
     enabled: false
 
+  # L7 authorization, enforced by the waypoint (requires waypoint.enabled).
+  # ALLOW semantics: only the listed methods/paths get through; everything
+  # else is 403 — even with a valid mTLS identity. "ztunnel decides WHO may
+  # connect; the waypoint decides WHAT they may do."
+  l7Authz:
+    enabled: false
+    allowedMethods: ["GET"]
+    allowedPaths: ["/api/*"]
+    # optional: restrict to specific identities as well (empty = any meshed caller)
+    allowedPrincipals: []
+
   # Namespace-wide STRICT mTLS (PeerAuthentication). Enable AFTER the service
   # is in the mesh to prove that plaintext callers get rejected.
   strictMtls: false

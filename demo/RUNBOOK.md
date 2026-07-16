@@ -132,6 +132,20 @@ kubectl get gateway -n payment && kubectl get pods -n payment
 latencies — the full HTTP graph. One value flip = observability upgrade.
 (Requires the gateway-api-crds app — synced automatically at wave -1.)
 
+**L7 authorization — "who may connect" vs "what they may do":**
+
+```bash
+# apps/payment/values.yaml -> istio.l7Authz.enabled: true ; commit, push, Sync
+# GET still works (allowed):
+kubectl -n checkout exec deploy/checkout-traffic-gen -- \
+  curl -s -o /dev/null -w '%{http_code}\n' http://payment.payment.svc.cluster.local/api/charge   # 200
+# anything else is denied by the waypoint — despite a valid mTLS identity:
+kubectl -n checkout exec deploy/checkout-traffic-gen -- \
+  curl -s -w '\n%{http_code}\n' -X DELETE http://payment.payment.svc.cluster.local/api/charge    # RBAC: access denied / 403
+```
+
+One-liner for the room: *ztunnel decided WHO may connect; the waypoint decides WHAT they may do.*
+
 ## Phase 6 — Bonus if time allows (~2 min)
 
 **STRICT mTLS — reject plaintext callers:**

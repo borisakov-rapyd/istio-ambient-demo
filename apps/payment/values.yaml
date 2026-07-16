@@ -7,6 +7,10 @@ istio:
   waypoint:
     enabled: false
 
+  # L7 authz demo (needs waypoint): only GET /api/* allowed -> POST/DELETE = 403
+  l7Authz:
+    enabled: false
+
   # Bonus steps (enable AFTER both apps are in the mesh):
   strictMtls: false           # step 2: reject plaintext callers
   authorizationPolicy:

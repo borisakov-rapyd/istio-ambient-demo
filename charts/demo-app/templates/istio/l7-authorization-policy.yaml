@@ -1,0 +1,28 @@
+{{- if and .Values.istio.enabled .Values.istio.waypoint.enabled .Values.istio.l7Authz.enabled }}
+# L7 authorization — attached to the WAYPOINT (targetRefs), not the pods.
+# ztunnel enforces L4 (who may connect); this enforces L7 (what they may do):
+# only the allowed HTTP methods/paths pass, everything else returns 403.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "demo-app.name" . }}-l7-allow
+spec:
+  targetRefs:
+    - kind: Gateway
+      group: gateway.networking.k8s.io
+      name: waypoint
+  action: ALLOW
+  rules:
+    - {{- if .Values.istio.l7Authz.allowedPrincipals }}
+      from:
+        - source:
+            principals:
+              {{- toYaml .Values.istio.l7Authz.allowedPrincipals | nindent 14 }}
+      {{- end }}
+      to:
+        - operation:
+            methods:
+              {{- toYaml .Values.istio.l7Authz.allowedMethods | nindent 14 }}
+            paths:
+              {{- toYaml .Values.istio.l7Authz.allowedPaths | nindent 14 }}
+{{- end }}
