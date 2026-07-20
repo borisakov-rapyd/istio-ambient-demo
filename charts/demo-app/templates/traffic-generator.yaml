@@ -30,8 +30,14 @@ spec:
           args:
             - |
               while true; do
-                curl -s -o /dev/null -w "%{http_code} {{ .Values.trafficGenerator.targetUrl }}\n" \
+                curl -s -o /dev/null -w "GET %{http_code}\n" \
                   "{{ .Values.trafficGenerator.targetUrl }}" || true
+                {{- if .Values.trafficGenerator.mixedMethods }}
+                # also send a DELETE: 200 while unrestricted, turns 403 (red in Kiali)
+                # the moment the L7 authorization policy lands on the waypoint
+                curl -s -o /dev/null -w "DELETE %{http_code}\n" -X DELETE \
+                  "{{ .Values.trafficGenerator.targetUrl }}" || true
+                {{- end }}
                 sleep {{ .Values.trafficGenerator.intervalSeconds }}
               done
           resources:

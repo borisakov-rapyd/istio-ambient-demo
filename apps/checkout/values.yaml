@@ -14,3 +14,4 @@ trafficGenerator:
   enabled: true
   targetUrl: http://payment.payment.svc.cluster.local/api/charge
   intervalSeconds: 2
+  mixedMethods: true   # GET + DELETE -> the DELETEs turn red in Kiali when L7 authz lands

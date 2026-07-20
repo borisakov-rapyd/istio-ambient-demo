@@ -69,3 +69,6 @@ trafficGenerator:
   enabled: false
   targetUrl: ""       # e.g. http://payment.payment.svc.cluster.local/api/charge
   intervalSeconds: 2
+  # also send DELETEs: invisible while unrestricted, turns the Kiali edge
+  # partly red (403) once the L7 authorization policy is enabled
+  mixedMethods: false
