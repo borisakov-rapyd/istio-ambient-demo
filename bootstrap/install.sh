@@ -38,9 +38,14 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 cat <<'EOF'
 
-Done. Next:
-  kubectl -n argocd port-forward svc/argocd-server 8080:80
-  open http://localhost:8080   (user: admin, password above)
+Done. Next — run each in its own terminal (self-healing loops):
+
+  # ArgoCD UI -> http://localhost:8080  (admin / password above)
+  while true; do kubectl -n argocd port-forward svc/argocd-server 8080:80; sleep 1; done
+
+  # Kiali UI  -> http://localhost:20001  (available once the kiali app is synced)
+  while true; do kubectl -n istio-system port-forward svc/kiali 20001:20001; sleep 1; done
 
 Watch the sync waves: istio-base -> istiod/istio-cni -> ztunnel -> prometheus/kiali -> demo apps.
+Reminder: checkout & payment have NO auto-sync — click Sync on both in the ArgoCD UI.
 EOF
