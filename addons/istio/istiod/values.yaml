@@ -10,16 +10,21 @@ meshConfig:
     retryOn: "connect-failure,refused-stream,unavailable,cancelled,reset"
 
 pilot:
+  # ---- TIP & TRICK: the node startup race ---------------------------------
+  # On cluster scale-up, pods can be scheduled BEFORE istio-cni/ztunnel are
+  # ready on the new node -> their traffic silently bypasses the mesh.
+  # Fix: node pools add a cni.istio.io/not-ready taint at node creation
+  # (e.g. via Karpenter/ASG startupTaints); the untaint controller below
+  # removes it only once the CNI and ztunnel are Ready on that node.
+  # Result: pods physically cannot land on a node where the mesh isn't ready.
+  taint:
+    enabled: true
+    namespace: istio-system   # explicitly set namespace for CNI/ztunnel lookup
   env:
     PILOT_ENABLE_AMBIENT: "true"
     PILOT_AUTO_ALLOW_WAYPOINT_POLICY: "true"
-  # Node untaint controller — not required for the demo (no autoscaling),
-  # but shown here because we present it as a production rollout tip:
-  # taint:
-  #   enabled: true
-  #   namespace: istio-system
-  # env:
-  #   PILOT_ENABLE_NODE_UNTAINT_CONTROLLERS: "true"
+    PILOT_ENABLE_NODE_UNTAINT_CONTROLLERS: "true"
 
 global:
   logAsJson: false
+
