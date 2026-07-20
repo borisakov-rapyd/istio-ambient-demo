@@ -1,8 +1,8 @@
 name: payment
 
 istio:
-  enabled: false   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
-  mode: namespace  # namespace = live enrollment, no restart | pod = per-service, rides a rollout
+  enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
+  mode: pod  # namespace = live enrollment, no restart | pod = per-service, rides a rollout
 
   # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
   waypoint:
