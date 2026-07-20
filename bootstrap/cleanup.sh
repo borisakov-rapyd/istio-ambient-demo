@@ -54,6 +54,27 @@ for ns in checkout payment monitoring istio-system argocd; do
   kubectl wait --for=delete "ns/$ns" --timeout=180s 2>/dev/null || true
 done
 
+echo "==> Scrubbing stale istio-cni entries from node CNI configs"
+# If istio-cni dies uncleanly, its chained plugin entry stays in /etc/cni/net.d and
+# every new pod fails sandbox creation with: plugin "istio-cni" failed: Unauthorized.
+# kubectl debug node/ uses hostNetwork, so it works even while pod networking is broken.
+for node in $(kubectl get nodes -o name | cut -d/ -f2); do
+  kubectl debug "node/$node" --image=python:3.12-alpine -q -- python3 -c '
+import json, glob
+for p in glob.glob("/host/etc/cni/net.d/*.conflist"):
+    d = json.load(open(p))
+    n = len(d.get("plugins", []))
+    d["plugins"] = [x for x in d.get("plugins", []) if x.get("type") != "istio-cni"]
+    if len(d["plugins"]) != n:
+        json.dump(d, open(p, "w"), indent=2)
+        print(f"{p}: removed istio-cni entry")
+' 2>/dev/null || true
+done
+sleep 5
+# remove the completed node-debugger helper pods
+kubectl get pods -o name 2>/dev/null | grep node-debugger | xargs -r kubectl delete --wait=false || true
+kubectl get pods -A --field-selector=status.phase=Pending --no-headers 2>/dev/null | head -5 || true
+
 if [ "${DELETE_CRDS:-false}" = "true" ]; then
   echo "==> Deleting Istio + Gateway API CRDs (DELETE_CRDS=true)"
   kubectl get crd -o name | grep -E 'istio\.io|gateway\.networking\.k8s\.io' | xargs -r kubectl delete
