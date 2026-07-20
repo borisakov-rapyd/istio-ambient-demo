@@ -10,6 +10,16 @@ if grep -q REPO_URL_PLACEHOLDER root-app.yaml; then
   exit 1
 fi
 
+PHASE=$(kubectl get ns argocd -o jsonpath='{.status.phase}' 2>/dev/null || true)
+if [ "$PHASE" = "Terminating" ]; then
+  echo "==> argocd namespace is still Terminating from a previous cleanup — waiting (max 3m)"
+  kubectl wait --for=delete ns/argocd --timeout=180s || {
+    echo "ERROR: namespace stuck Terminating. Strip leftover finalizers and retry:" >&2
+    echo "  kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type merge -p '{\"metadata\":{\"finalizers\":null}}'" >&2
+    exit 1
+  }
+fi
+
 echo "==> Installing ArgoCD (chart ${ARGOCD_CHART_VERSION})"
 helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
 helm repo update argo >/dev/null
