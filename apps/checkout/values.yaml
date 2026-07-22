@@ -6,7 +6,7 @@ istio:
 
   # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
   waypoint:
-    enabled: false
+    enabled: true
 
 # checkout continuously calls payment — this paints the Kiali graph
 # and gives tcpdump something to capture.
