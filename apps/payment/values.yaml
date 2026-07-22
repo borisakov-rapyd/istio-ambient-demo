@@ -8,9 +8,9 @@ istio:
   # Bonus steps (enable AFTER both apps are in the mesh):
   strictMtls: true           # step 2: reject plaintext callers
 
-  
+
   authorizationPolicy:
-    enabled: false            # step 3: only checkout may call payment
+    enabled: true            # step 3: only checkout may call payment
     allowedPrincipals:
       - cluster.local/ns/checkout/sa/checkout
 
