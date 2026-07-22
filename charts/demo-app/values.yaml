@@ -34,6 +34,21 @@ istio:
   #               enrollment rides the next rollout.
   mode: namespace
 
+  # ---------- L4 features (enforced by ztunnel) ----------
+
+  # Namespace-wide STRICT mTLS (PeerAuthentication). Enable AFTER the service
+  # is in the mesh to prove that plaintext callers get rejected.
+  strictMtls: false
+
+  # L4 authorization: only the listed service accounts may call this app.
+  # (When a waypoint is attached, its identity is appended automatically.)
+  authorizationPolicy:
+    enabled: false
+    allowedPrincipals: []
+    # e.g. ["cluster.local/ns/checkout/sa/checkout"]
+
+  # ---------- L7 features (require the waypoint) ----------
+
   # Waypoint = per-namespace L7 proxy. ztunnel alone gives L4 only (mTLS,
   # identity, TCP bytes). Enable this to get HTTP metrics in Kiali
   # (istio_requests_total), retries, canary weights, L7 authz.
@@ -51,16 +66,6 @@ istio:
     allowedPaths: ["/api/*"]
     # optional: restrict to specific identities as well (empty = any meshed caller)
     allowedPrincipals: []
-
-  # Namespace-wide STRICT mTLS (PeerAuthentication). Enable AFTER the service
-  # is in the mesh to prove that plaintext callers get rejected.
-  strictMtls: false
-
-  # L4 authorization: only the listed service accounts may call this app.
-  authorizationPolicy:
-    enabled: false
-    allowedPrincipals: []
-    # e.g. ["cluster.local/ns/checkout/sa/checkout"]
 
 # ---- Traffic generator ----------------------------------------------------
 # Optional in-cluster client that curls a target in a loop, so Kiali has a
