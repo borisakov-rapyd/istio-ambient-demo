@@ -16,7 +16,7 @@ istio:
 
   # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
   waypoint:
-    enabled: false
+    enabled: true
 
   # L7 authz demo (needs waypoint): only GET /api/* allowed -> POST/DELETE = 403
   l7Authz:
