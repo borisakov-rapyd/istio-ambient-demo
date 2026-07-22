@@ -20,7 +20,7 @@ istio:
 
   # L7 authz demo (needs waypoint): only GET /api/* allowed -> POST/DELETE = 403
   l7Authz:
-    enabled: false
+    enabled: true
 
 # payment also calls checkout — bidirectional traffic for a livelier graph
 trafficGenerator:
