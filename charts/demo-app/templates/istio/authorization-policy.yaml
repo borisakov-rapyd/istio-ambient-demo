@@ -1,6 +1,10 @@
 {{- if and .Values.istio.enabled .Values.istio.authorizationPolicy.enabled }}
 # L4 authorization enforced by ztunnel: only the listed identities may call us.
 # Identity = SPIFFE service account, NOT an IP address.
+#
+# NOTE: when a waypoint is attached, traffic reaches the pod FROM the waypoint,
+# so the waypoint's own identity is appended automatically — otherwise the
+# policy would deny everything the moment the waypoint is enabled.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -15,4 +19,7 @@ spec:
         - source:
             principals:
               {{- toYaml .Values.istio.authorizationPolicy.allowedPrincipals | nindent 14 }}
+              {{- if .Values.istio.waypoint.enabled }}
+              - cluster.local/ns/{{ .Release.Namespace }}/sa/waypoint
+              {{- end }}
 {{- end }}

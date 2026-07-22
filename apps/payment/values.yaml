@@ -18,9 +18,13 @@ istio:
   waypoint:
     enabled: true
 
-  # L7 authz demo (needs waypoint): only GET /api/* allowed -> POST/DELETE = 403
+  # L7 authz demo (needs waypoint). ALLOW semantics: what's listed passes,
+  # everything else gets 403 — tune methods/paths freely for the demo.
   l7Authz:
     enabled: true
+    allowedMethods: ["GET"]        # e.g. ["GET", "POST"]
+    allowedPaths: ["/api/*"]       # e.g. ["/api/charge", "/health"]
+    allowedPrincipals: []          # optional: also restrict WHO (SPIFFE identities)
 
 # payment also calls checkout — bidirectional traffic for a livelier graph
 trafficGenerator:
