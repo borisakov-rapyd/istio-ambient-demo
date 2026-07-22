@@ -3,8 +3,15 @@ configs:
   params:
     # plain HTTP behind kubectl port-forward — fine for a demo, never for prod
     server.insecure: true
+    # web terminal: Pod resource -> Terminal tab (exec into containers from the UI)
+    server.enable.terminal: true
   cm:
     timeout.reconciliation: 30s   # fast refresh so the audience doesn't wait
+  rbac:
+    # exec is not covered by wildcard RBAC — it must be granted explicitly
+    policy.csv: |
+      p, role:admin, exec, create, */*, allow
+      g, admin, role:admin
 
 dex:
   enabled: false
@@ -14,6 +21,23 @@ notifications:
 
 server:
   replicas: 1
+  # the server's ServiceAccount also needs k8s permission to create pod execs.
+  # NOTE: these rules REPLACE the chart defaults, so the defaults are repeated here.
+  clusterRoleRules:
+    enabled: true
+    rules:
+      - apiGroups: ["*"]
+        resources: ["*"]
+        verbs: ["delete", "get", "patch"]
+      - apiGroups: [""]
+        resources: ["events"]
+        verbs: ["list"]
+      - apiGroups: [""]
+        resources: ["pods", "pods/log"]
+        verbs: ["get"]
+      - apiGroups: [""]
+        resources: ["pods/exec"]
+        verbs: ["create"]
 
 repoServer:
   replicas: 1
