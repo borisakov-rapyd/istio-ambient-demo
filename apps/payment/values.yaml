@@ -4,20 +4,23 @@ istio:
   enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
   mode: pod  # namespace = live enrollment, no restart | pod = per-service, rides a rollout
 
-  # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
-  waypoint:
-    enabled: true
-
-  # L7 authz demo (needs waypoint): only GET /api/* allowed -> POST/DELETE = 403
-  l7Authz:
-    enabled: false
 
   # Bonus steps (enable AFTER both apps are in the mesh):
-  strictMtls: false           # step 2: reject plaintext callers
+  strictMtls: true           # step 2: reject plaintext callers
+
+  
   authorizationPolicy:
     enabled: false            # step 3: only checkout may call payment
     allowedPrincipals:
       - cluster.local/ns/checkout/sa/checkout
+
+  # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
+  waypoint:
+    enabled: false
+
+  # L7 authz demo (needs waypoint): only GET /api/* allowed -> POST/DELETE = 403
+  l7Authz:
+    enabled: false
 
 # payment also calls checkout — bidirectional traffic for a livelier graph
 trafficGenerator:
