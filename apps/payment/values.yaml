@@ -1,7 +1,7 @@
 name: payment
 
 istio:
-  enabled: false   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
+  enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
   mode: namespace  # namespace = live enrollment, no restart | pod = per-service, rides a rollout
 
   # ---------- L4 features (enforced by ztunnel) ----------
