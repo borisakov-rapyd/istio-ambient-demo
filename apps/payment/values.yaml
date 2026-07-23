@@ -17,7 +17,7 @@ istio:
 
   # flip to true to attach a waypoint -> HTTP metrics appear in Kiali
   waypoint:
-    enabled: false
+    enabled: true
 
   # L7 authz demo (needs waypoint). ALLOW semantics: what's listed passes,
   # everything else gets 403 — tune methods/paths freely for the demo.
