@@ -22,7 +22,7 @@ istio:
   # L7 authz demo (needs waypoint). ALLOW semantics: what's listed passes,
   # everything else gets 403 — tune methods/paths freely for the demo.
   l7Authz:
-    enabled: false
+    enabled: true
     allowedMethods: ["GET"]        # e.g. ["GET", "POST"]
     allowedPaths: ["/api/*"]       # e.g. ["/api/charge", "/health"]
     allowedPrincipals: []          # optional: also restrict WHO (SPIFFE identities)
