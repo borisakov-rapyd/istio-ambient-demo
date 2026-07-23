@@ -9,7 +9,7 @@ istio:
   strictMtls: false           # reject plaintext callers (PeerAuthentication STRICT)
 
   authorizationPolicy:
-    enabled: false            # only checkout may call payment (waypoint identity auto-added)
+    enabled: true            # only checkout may call payment (waypoint identity auto-added)
     allowedPrincipals:
       - cluster.local/ns/checkout/sa/checkout
 
