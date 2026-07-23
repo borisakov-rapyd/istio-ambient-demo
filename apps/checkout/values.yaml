@@ -1,17 +1,18 @@
 name: checkout
 
 istio:
-  enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
+  enabled: false   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
   mode: namespace  # namespace = live enrollment, no restart | pod = per-service, rides a rollout
 
   # L7 step: flip to true to attach a waypoint -> HTTP metrics appear in Kiali
   waypoint:
-    enabled: true
+    enabled: false
 
-# checkout continuously calls payment — this paints the Kiali graph
-# and gives tcpdump something to capture.
+# checkout continuously calls payment — this paints the Kiali graph.
+# mixedMethods: GET + DELETE every cycle; the DELETEs turn red in Kiali
+# the moment payment enables l7Authz.
 trafficGenerator:
   enabled: true
   targetUrl: http://payment.payment.svc.cluster.local/api/charge
   intervalSeconds: 2
-  mixedMethods: true   # GET + DELETE -> the DELETEs turn red in Kiali when L7 authz lands
+  mixedMethods: true
