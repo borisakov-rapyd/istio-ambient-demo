@@ -1,7 +1,7 @@
 name: payment
 
 istio:
-  enabled: true   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
+  enabled: false   # <<< LIVE DEMO: flip to true, commit, push, watch ArgoCD
   mode: namespace  # namespace = live enrollment, no restart | pod = per-service, rides a rollout
 
   # ---------- L4 features (enforced by ztunnel) ----------
@@ -9,7 +9,7 @@ istio:
   strictMtls: false           # reject plaintext callers (PeerAuthentication STRICT)
 
   authorizationPolicy:
-    enabled: true            # only checkout may call payment (waypoint identity auto-added)
+    enabled: false            # only checkout may call payment (waypoint identity auto-added)
     allowedPrincipals:
       - cluster.local/ns/checkout/sa/checkout
 
@@ -17,12 +17,12 @@ istio:
 
   # flip to true to attach a waypoint -> HTTP metrics appear in Kiali
   waypoint:
-    enabled: true
+    enabled: false
 
   # L7 authz demo (needs waypoint). ALLOW semantics: what's listed passes,
   # everything else gets 403 — tune methods/paths freely for the demo.
   l7Authz:
-    enabled: true
+    enabled: false
     allowedMethods: ["GET"]        # e.g. ["GET", "POST"]
     allowedPaths: ["/api/*"]       # e.g. ["/api/charge", "/health"]
     allowedPrincipals: []          # optional: also restrict WHO (SPIFFE identities)
