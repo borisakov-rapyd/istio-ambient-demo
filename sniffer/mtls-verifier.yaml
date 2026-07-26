@@ -1,0 +1,54 @@
+# Continuous STRICT-mTLS assertion — no log reading required.
+# An UNMESHED caller (sniffer namespace, not ambient-labeled) curls payment.
+# The readiness probe IS the test:
+#   EXPECT=reject  -> Ready only when the call is REJECTED  (STRICT enforced)  [prod invariant]
+#   EXPECT=allow   -> Ready only when the call returns 200  (PERMISSIVE / mesh off)
+# So the pod is Ready <=> the security posture you expect is actually in effect.
+# ArgoCD shows the app Healthy/Degraded accordingly; CI can gate on:
+#   kubectl -n sniffer wait --for=condition=available deploy/mtls-verifier --timeout=90s
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mtls-verifier
+  namespace: sniffer
+  labels:
+    app: mtls-verifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mtls-verifier
+  template:
+    metadata:
+      labels:
+        app: mtls-verifier
+    spec:
+      containers:
+        - name: verifier
+          image: curlimages/curl:8.11.1
+          command: ["sh", "-c", "echo mtls-verifier up; sleep infinity"]
+          env:
+            - name: TARGET
+              value: "http://payment.payment.svc.cluster.local/api/charge"
+            - name: EXPECT
+              value: "reject"        # reject = STRICT must block us | allow = call must succeed
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$TARGET" 2>/dev/null) || code=000
+                  # 000 = connection failed/reset -> STRICT rejected the unmeshed caller
+                  if [ "$EXPECT" = "reject" ]; then
+                    [ "$code" = "000" ] && exit 0 || exit 1
+                  else
+                    [ "$code" = "200" ] && exit 0 || exit 1
+                  fi
+            periodSeconds: 10
+            failureThreshold: 2
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
