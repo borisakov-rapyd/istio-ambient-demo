@@ -1,50 +1,144 @@
-# Istio Ambient Mode — Live Demo (CNCF TLV Meetup)
+# Istio Ambient Mesh — GitOps Demo
 
-Self-contained GitOps repo for the live demo: fresh ArgoCD on a fresh EKS cluster,
-Istio ambient installed via ApplicationSet (same pattern as `devops-eks-addons-argocd`),
-two demo services (`checkout`, `payment`) that join the mesh with a single label flip in Git.
+A self-contained, GitOps-driven demo of **Istio ambient mode** on Kubernetes.
+One `install.sh` bootstraps Argo CD, which then installs Istio (ambient), an
+observability stack, and two example services — all from this repo. From there,
+every step of the demo is a **Git change**: enroll services into the mesh, add
+an L7 waypoint, apply authorization, and enforce strict mTLS.
 
-## Layout
+> Presented at CNCF Cloud Native Tel Aviv — *"Istio Ambient Mode: service mesh
+> without the sidecars."*
+
+---
+
+## What it demonstrates
+
+| Step | Change in Git | What you see |
+|------|---------------|--------------|
+| **Enroll** | `istio.enabled: true` | services join the mesh live — traffic becomes mTLS, zero app changes |
+| **Observe** | `waypoint.enabled: true` | HTTP golden signals (rates, codes, latency) appear in Kiali |
+| **Authorize (L7)** | `l7Authz.enabled: true` | only `GET /api/*` allowed; other methods get `403` |
+| **Authorize (L4)** | `authorizationPolicy.enabled: true` | only listed workload identities may call the service |
+| **Encrypt strictly** | `strictMtls: true` | non-mesh (identity-less) callers are rejected |
+
+Two proofs run continuously so the effects are visible without packet-hunting:
+a **wire sniffer** (node-level tcpdump) and an **mTLS verifier** (an unmeshed
+caller that logs `OK` → `FAIL` the moment strict mTLS is enforced).
+
+---
+
+## Architecture
 
 ```
-bootstrap/           ArgoCD helm install + root app-of-apps (the only kubectl apply)
-applicationSets/     addons-appset (istio, prometheus, kiali) + demo-apps-appset
-addons/              per-addon config.yaml (generator input) + values.yaml
-  istio/             base / istiod / istio-cni / ztunnel — ambient enabled, v1.29.2
-  prometheus/        minimal, for the Kiali graph
-  kiali/             anonymous auth, view-only
-charts/demo-app/     helm chart: Deployment + Service + Istio templates
-                     istio.enabled=true  =>  pod label istio.io/dataplane-mode: ambient
+GitHub repo ──► Argo CD ──► installs & syncs everything below
+                              │
+   istiod (control plane) ────┤   xDS + SPIFFE certificates
+                              │
+   ┌── node ───────────────┐  │  ┌── node ───────────────┐
+   │ checkout   traffic-gen │  │  │ waypoint (L7, opt.)   │
+   │        │               │  │  │        │              │
+   │     ztunnel (L4) ◄─────┼──HBONE :15008──► ztunnel(L4)│
+   └───────────────────────┘  │  └───────────────────────┘
+                              │
+   Prometheus ──► Kiali  ◄────┘   telemetry (L4 from ztunnel, L7 from waypoint)
+```
+
+- **istiod** — control plane: configuration (xDS) + workload identity (mTLS certs).
+- **ztunnel** — per-node L4 proxy (DaemonSet): mTLS, identity, TCP telemetry.
+- **waypoint** — optional per-namespace L7 proxy: HTTP routing, metrics, authz.
+- **istio-cni** — node agent that enrolls pods into the mesh (chained, non-replacing).
+
+---
+
+## Repository layout
+
+```
+bootstrap/           Argo CD install + root app-of-apps (the only kubectl apply)
+  install.sh           one-shot bootstrap
+  cleanup.sh           guarded teardown (refuses prod/sbox, scrubs node CNI)
+  reset-demo.sh        restore demo values to the all-off baseline
+  baseline/            canonical baseline values for the demo apps
+applicationSets/     Argo CD ApplicationSets + standalone Apps
+addons/              Istio (base/istiod/cni/ztunnel), Prometheus, Kiali
+  <addon>/config.yaml  generator input   <addon>/values.yaml  Helm values
+charts/demo-app/     Helm chart: Deployment + Service + Istio policy templates
 apps/                checkout & payment (config.yaml + values.yaml each)
-demo/RUNBOOK.md      the on-stage script, phase by phase
+sniffer/             wire-sniffer (plaintext/HBONE) + mtls-verifier
 ```
+
+Sync order (waves): `gateway-api-crds (-1)` → `istio-base (0)` →
+`istiod, istio-cni (1)` → `ztunnel (2)` → `prometheus (3)` → `kiali (4)` →
+`sniffer (5)` → demo apps (10).
+
+---
 
 ## Quick start
 
+Requires a Kubernetes cluster (2+ nodes recommended; not Fargate — ambient needs
+real nodes), plus `kubectl`, `helm`, and `git`.
+
 ```bash
-./bootstrap/set-repo-url.sh <this-repo-git-url>   # after pushing to Git
-./bootstrap/install.sh                            # installs ArgoCD + root app
+# 1. point the manifests at your fork
+./bootstrap/set-repo-url.sh https://github.com/<you>/istio-ambient-demo.git
+git commit -am "set repo url" && git push
+
+# 2. bootstrap Argo CD + the root app; everything else syncs from Git
+./bootstrap/install.sh
 ```
 
-Everything else syncs from Git. See `demo/RUNBOOK.md` for the demo flow:
-plaintext proof → flip `istio.enabled` → mTLS proof → (bonus) STRICT mTLS + L4 authz.
+The script prints the Argo CD admin password and the port-forward commands for
+the Argo CD and Kiali UIs. The two demo apps have auto-sync **off** by design —
+Sync them from the UI to start (so the enrollment step later is a deliberate click).
 
-## Sync order (waves)
+## Run the demo
 
-istio-base (0) → istiod, istio-cni (1) → ztunnel (2) → prometheus (3) → kiali (4) → demo apps (10)
+Everything is a Git change followed by an Argo CD sync. In order:
 
-## Before demo day — checklist
+```bash
+# enroll both services into the mesh
+#   apps/checkout/values.yaml + apps/payment/values.yaml -> istio.enabled: true
+# add L7 (HTTP metrics + authz needs this)
+#   apps/payment/values.yaml -> istio.waypoint.enabled: true   (checkout too, for a fuller graph)
+# L7 authorization: GET /api/* only
+#   apps/payment/values.yaml -> istio.l7Authz.enabled: true
+# strict mTLS: reject identity-less callers
+#   apps/payment/values.yaml -> istio.strictMtls: true
+git commit -am "..." && git push        # then Sync in Argo CD
+```
 
-- [ ] Bump pinned chart versions if desired (argo-cd 10.1.3, kiali 2.29.0, prometheus 25.30.1 — verify they still resolve: `helm search repo`). Keep ArgoCD ≥ chart 8.x on k8s 1.33+ (older versions fail diffing with `.status.terminatingReplicas`), and keep Kiali roughly in step with the Istio minor (old Kiali can't parse new ztunnel config dumps).
-- [ ] Public Git repo (or add repo credentials to ArgoCD)
-- [ ] EKS: 2–3 regular nodes (demo workloads must NOT land on Fargate — no ambient support)
-- [ ] `istioctl` 1.29.x on the presentation laptop
-- [ ] Pre-pull images / full rehearsal at least once (record it as the offline fallback)
-- [ ] Laptop: two visible terminals (curl + tcpdump), ArgoCD UI tab, Kiali tab
+Watch the effects:
 
-## Notes
+```bash
+kubectl -n sniffer logs -f ds/wire-sniffer        # plaintext HTTP, then encrypted
+kubectl -n sniffer logs -f deploy/mtls-verifier   # OK -> FAIL when strict mTLS lands
+# Kiali: Traffic Graph -> checkout + payment -> Security badge for mTLS padlocks
+```
 
-- ArgoCD runs with `server.insecure=true` and Kiali with anonymous auth — demo settings, not production settings.
-- istio-cni chains into the AWS VPC CNI (`10-aws.conflist`); it does not replace it.
-- `ambient.ipv6: false`, ztunnel `terminationGracePeriodSeconds: 300` — same rollout
-  tips we present in the talk; the demo values mirror production intentionally.
+## Reset & clean up
+
+```bash
+./bootstrap/reset-demo.sh    # restore the all-off baseline, commit, push
+./bootstrap/cleanup.sh       # tear the whole demo down (guarded)
+```
+
+---
+
+## Notes & scope
+
+This is a **demo**, tuned for clarity over production hardening:
+
+- Argo CD runs with `server.insecure: true`; Kiali uses anonymous auth.
+- `sniffer/` runs a privileged, host-network tcpdump — never ship that to a real cluster.
+- Chart versions are pinned (`argo-cd 10.1.3`, `kiali 2.29.0`, `istio 1.29.2`).
+  On Kubernetes ≥ 1.33 keep Argo CD recent (older versions fail diffs on
+  `.status.terminatingReplicas`), and keep Kiali roughly in step with the Istio minor.
+
+Production-minded touches that *are* included, because they were real lessons:
+`istio-cni` chains into the existing CNI (doesn't replace it), `ambient.ipv6: false`,
+ztunnel `terminationGracePeriodSeconds: 300`, and the istiod node-untaint controller
+(`pilot.taint` + `PILOT_ENABLE_NODE_UNTAINT_CONTROLLERS`) to avoid the pod-beats-mesh
+startup race on node scale-up.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
