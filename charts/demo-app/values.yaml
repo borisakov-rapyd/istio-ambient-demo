@@ -3,6 +3,11 @@ name: demo-app
 
 replicaCount: 1
 
+# Spread demo services across nodes (preferred) so service-to-service traffic
+# crosses the wire — keeps the plaintext→HBONE sniffer proof unambiguous.
+# Needs 2+ schedulable nodes to take effect; harmless on a single node.
+spreadAcrossNodes: true
+
 image:
   # Echo server: answers any HTTP call with a JSON dump of the request.
   repository: mendhak/http-https-echo

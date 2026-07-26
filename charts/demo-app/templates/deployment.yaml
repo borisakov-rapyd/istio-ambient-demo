@@ -20,6 +20,22 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "demo-app.name" . }}
+      {{- if .Values.spreadAcrossNodes }}
+      # Keep demo services on DIFFERENT nodes so their traffic actually crosses
+      # the wire — this makes the plaintext→HBONE proof clean (no same-node
+      # plaintext legs). "preferred" so a 1-node cluster still schedules.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/managed-by
+                      operator: In
+                      values: ["argocd"]
+      {{- end }}
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

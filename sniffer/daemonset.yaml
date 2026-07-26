@@ -36,8 +36,16 @@ spec:
               echo "=== wire-sniffer ==="
               echo ":8080  = plaintext app traffic (readable HTTP)"
               echo ":15008 = HBONE / mTLS (encrypted once the mesh is on)"
+              echo "excluding the node gateway (kubelet health probes stay plaintext)"
               echo "====================="
-              exec tcpdump -i any -A -l -n -s 200 'tcp port 8080 or tcp port 15008'
+              # NODE_GW = this node's pod-subnet gateway (usually .1). Excluding it drops
+              # kubelet readiness probes, which are NOT meshed and would keep showing
+              # plaintext on :8080 even after enrollment. We want the app-to-app call only.
+              NODE_GW="$(ip route | awk '/default/ {print $3; exit}')"
+              GW_CIDR1="$(hostname -i | awk -F. '{print $1"."$2"."$3".1"}')"
+              echo "filtering out gateway hosts: ${NODE_GW} ${GW_CIDR1}"
+              exec tcpdump -i any -A -l -n -s 200 \
+                "(tcp port 8080 or tcp port 15008) and not host ${NODE_GW} and not host ${GW_CIDR1}"
           securityContext:
             privileged: true
           resources:
