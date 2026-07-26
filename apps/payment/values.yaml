@@ -6,7 +6,7 @@ istio:
 
   # ---------- L4 features (enforced by ztunnel) ----------
 
-  strictMtls: false           # reject plaintext callers (PeerAuthentication STRICT)
+  strictMtls: true           # reject plaintext callers (PeerAuthentication STRICT)
 
   authorizationPolicy:
     enabled: false            # only checkout may call payment (waypoint identity auto-added)
