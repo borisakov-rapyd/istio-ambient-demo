@@ -1,0 +1,25 @@
+# The plaintext/HBONE sniffer, delivered by ArgoCD like everything else —
+# so the "prove it's plaintext" moment stays inside the GitOps story.
+# View it: ArgoCD UI → wire-sniffer app → the DaemonSet pod → Logs tab.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wire-sniffer
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/borisakov-rapyd/istio-ambient-demo.git
+    targetRevision: main
+    path: sniffer
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sniffer
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

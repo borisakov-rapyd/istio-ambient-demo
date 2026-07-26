@@ -1,0 +1,48 @@
+# Wire sniffer — GitOps-managed plaintext/HBONE proof for the demo.
+# hostNetwork + privileged so it sees the NODE's traffic (not the pod's).
+# Runs on every node (DaemonSet) so it covers wherever checkout/payment land.
+# DEMO ONLY — never ship a privileged host-network sniffer to a real cluster.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sniffer
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: wire-sniffer
+  namespace: sniffer
+  labels:
+    app: wire-sniffer
+spec:
+  selector:
+    matchLabels:
+      app: wire-sniffer
+  template:
+    metadata:
+      labels:
+        app: wire-sniffer
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+        - operator: Exists          # run on every node incl. control-plane
+      containers:
+        - name: tcpdump
+          image: nicolaka/netshoot:v0.13   # pre-pull before the demo
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "=== wire-sniffer ==="
+              echo ":8080  = plaintext app traffic (readable HTTP)"
+              echo ":15008 = HBONE / mTLS (encrypted once the mesh is on)"
+              echo "====================="
+              exec tcpdump -i any -A -l -n -s 200 'tcp port 8080 or tcp port 15008'
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

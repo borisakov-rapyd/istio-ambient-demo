@@ -46,11 +46,11 @@ echo "==> Uninstalling ArgoCD"
 helm uninstall argocd -n argocd --ignore-not-found 2>/dev/null || true
 
 echo "==> Deleting namespaces (Prune=false kept them alive on purpose)"
-kubectl delete ns checkout payment monitoring istio-system --ignore-not-found --timeout=120s || true
+kubectl delete ns checkout payment monitoring sniffer istio-system --ignore-not-found --timeout=120s || true
 kubectl delete ns argocd --ignore-not-found --timeout=120s || true
 
 echo "==> Waiting for namespaces to be FULLY gone (a re-install into a Terminating ns fails)"
-for ns in checkout payment monitoring istio-system argocd; do
+for ns in checkout payment monitoring sniffer istio-system argocd; do
   kubectl wait --for=delete "ns/$ns" --timeout=180s 2>/dev/null || true
 done
 
