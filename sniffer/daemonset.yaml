@@ -30,22 +30,28 @@ spec:
       containers:
         - name: tcpdump
           image: nicolaka/netshoot:v0.13   # pre-pull before the demo
+          env:
+            - name: IFACE
+              value: ""          # empty = auto-detect the inter-node NIC; override if needed
           command: ["/bin/sh", "-c"]
           args:
             - |
-              echo "=== wire-sniffer ==="
-              echo ":8080  = plaintext app traffic (readable HTTP)"
-              echo ":15008 = HBONE / mTLS (encrypted once the mesh is on)"
-              echo "excluding the node gateway (kubelet health probes stay plaintext)"
-              echo "====================="
-              # NODE_GW = this node's pod-subnet gateway (usually .1). Excluding it drops
-              # kubelet readiness probes, which are NOT meshed and would keep showing
-              # plaintext on :8080 even after enrollment. We want the app-to-app call only.
-              NODE_GW="$(ip route | awk '/default/ {print $3; exit}')"
-              GW_CIDR1="$(hostname -i | awk -F. '{print $1"."$2"."$3".1"}')"
-              echo "filtering out gateway hosts: ${NODE_GW} ${GW_CIDR1}"
-              exec tcpdump -i any -A -l -n -s 200 \
-                "(tcp port 8080 or tcp port 15008) and not host ${NODE_GW} and not host ${GW_CIDR1}"
+              echo "================ wire-sniffer ================"
+              echo "interfaces on this node:"
+              ip -o -brief link | awk '{print "  " $1 " " $2}'
+              # Capture the INTER-NODE interface only (the default-route device), NOT 'any'.
+              # On 'any' you also see the local ztunnel->app delivery leg, which is always
+              # plaintext. On the node NIC you see what actually crosses the wire between
+              # pods: plaintext :8080 before the mesh, encrypted HBONE :15008 after.
+              IFACE="${IFACE:-$(ip route | awk '/default/ {print $5; exit}')}"
+              echo "capturing on: ${IFACE}   (override with the IFACE env var)"
+              echo "readable HTTP = plaintext on the wire."
+              echo ">>> the stream goes SILENT once traffic is HBONE-encrypted <<<"
+              echo "============================================="
+              # grep keeps only HTTP request/response lines — no ACK/header noise, and
+              # nothing matches once the payload is TLS, so the screen simply stops.
+              tcpdump -i "${IFACE}" -A -l -n -s 400 'tcp port 8080 or tcp port 15008' 2>/dev/null \
+                | grep --line-buffered -E '(GET|POST|PUT|DELETE|PATCH) /|Host: |HTTP/1'
           securityContext:
             privileged: true
           resources:
