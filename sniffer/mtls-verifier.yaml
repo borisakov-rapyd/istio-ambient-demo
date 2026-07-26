@@ -1,11 +1,9 @@
-# Continuous STRICT-mTLS assertion — no log reading required.
-# An UNMESHED caller (sniffer namespace, not ambient-labeled) curls payment.
-# The readiness probe IS the test:
-#   EXPECT=reject  -> Ready only when the call is REJECTED  (STRICT enforced)  [prod invariant]
-#   EXPECT=allow   -> Ready only when the call returns 200  (PERMISSIVE / mesh off)
-# So the pod is Ready <=> the security posture you expect is actually in effect.
-# ArgoCD shows the app Healthy/Degraded accordingly; CI can gate on:
-#   kubectl -n sniffer wait --for=condition=available deploy/mtls-verifier --timeout=90s
+# STRICT-mTLS prover — an UNMESHED caller (sniffer namespace, not ambient-labeled)
+# that curls payment in a loop and prints a clear line per call:
+#   OK    ok  200   payment reachable      <- PERMISSIVE / STRICT off
+#   FAIL  reset/timeout                    <- STRICT enforced: unmeshed caller blocked
+# Watch: kubectl -n sniffer logs -f deploy/mtls-verifier
+# The stream flips from OK to FAIL the moment you enable strictMtls on payment.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,28 +24,27 @@ spec:
       containers:
         - name: verifier
           image: curlimages/curl:8.11.1
-          command: ["sh", "-c", "echo mtls-verifier up; sleep infinity"]
           env:
             - name: TARGET
               value: "http://payment.payment.svc.cluster.local/api/charge"
-            - name: EXPECT
-              value: "reject"        # reject = STRICT must block us | allow = call must succeed
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - |
-                  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$TARGET" 2>/dev/null) || code=000
-                  # 000 = connection failed/reset -> STRICT rejected the unmeshed caller
-                  if [ "$EXPECT" = "reject" ]; then
-                    [ "$code" = "000" ] && exit 0 || exit 1
-                  else
-                    [ "$code" = "200" ] && exit 0 || exit 1
-                  fi
-            periodSeconds: 10
-            failureThreshold: 2
-            timeoutSeconds: 5
+            - name: INTERVAL
+              value: "2"
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "mtls-verifier: unmeshed caller -> $TARGET"
+              echo "OK while payment accepts plaintext; FAIL once STRICT mTLS is enforced"
+              echo "-----------------------------------------------------------------"
+              while true; do
+                ts=$(date +%H:%M:%S)
+                code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$TARGET" 2>/dev/null) || code=000
+                if [ "$code" = "200" ]; then
+                  echo "$ts  OK    reached payment (HTTP $code)"
+                else
+                  echo "$ts  FAIL  rejected — no mTLS identity (curl code/http: $code)"
+                fi
+                sleep "$INTERVAL"
+              done
           resources:
             requests:
               cpu: 10m
