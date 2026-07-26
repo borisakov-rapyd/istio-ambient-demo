@@ -1,5 +1,5 @@
 # Installs all cluster addons (istio components, prometheus, kiali) from helm charts.
-# Same pattern as devops-eks-addons-argocd: git file generator over config.yaml,
+# Pattern: git file generator over config.yaml,
 # values from a values.yaml sitting next to each config (via $values ref).
 # Simplified for the demo: single in-cluster destination, no cluster-filter plugin.
 apiVersion: argoproj.io/v1alpha1

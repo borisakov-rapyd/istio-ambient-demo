@@ -1,4 +1,4 @@
-# istiod with ambient enabled — mirrors devops-eks-addons-argocd global-values.
+# istiod with ambient enabled.
 profile: ambient
 
 meshConfig:

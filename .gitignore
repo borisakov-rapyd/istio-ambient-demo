@@ -1,3 +1,7 @@
 *.bak
 .DS_Store
 .idea/
+
+# private presenter material — keep out of the public repo
+demo/RUNBOOK.md
+demo/DRY-RUN-SHEET.pdf
