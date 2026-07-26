@@ -50,8 +50,10 @@ spec:
               echo "============================================="
               # grep keeps only HTTP request/response lines — no ACK/header noise, and
               # nothing matches once the payload is TLS, so the screen simply stops.
+              # tcpdump -l line-buffers its own output; busybox grep streams it fine
+              # (no GNU --line-buffered flag available).
               tcpdump -i "${IFACE}" -A -l -n -s 400 'tcp port 8080 or tcp port 15008' 2>/dev/null \
-                | grep --line-buffered -E '(GET|POST|PUT|DELETE|PATCH) /|Host: |HTTP/1'
+                | grep -E '(GET|POST|PUT|DELETE|PATCH) /|Host: |HTTP/1'
           securityContext:
             privileged: true
           resources:
